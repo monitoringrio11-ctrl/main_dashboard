@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>สรุปผลการเบิกจ่าย สชป.11 - One Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: #0D2B4E;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px;
+  }
+
+  /* Loading */
+  #loadingScreen {
+    position: fixed; inset: 0;
+    background: #0D2B4E;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+    z-index: 9999;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 5px solid rgba(255,255,255,.2);
+    border-top-color: #42A5F5;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loadingScreen p { color: #90CAF9; font-size: 16px; font-weight: 600; }
+
+  .sheet {
+    width: 100%;
+    max-width: 1100px;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.4);
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0D2B4E 0%, #1565C0 60%, #1976D2 100%);
+    padding: 20px 28px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .header-left h1 { color: #fff; font-size: 22px; font-weight: 800; line-height: 1.2; }
+  .header-left p { color: #90CAF9; font-size: 13px; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .header-right .date-badge {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 8px; padding: 6px 14px;
+    color: #fff; font-size: 13px; font-weight: 700;
+  }
+  .header-right .target-badge {
+    margin-top: 6px; background: #E65100;
+    border-radius: 8px; padding: 4px 12px;
+    color: #fff; font-size: 12px; font-weight: 700; display: inline-block;
+  }
+
+  /* KPI Row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    border-bottom: 2px solid #E3F2FD;
+  }
+  .kpi-card { padding: 14px 10px; text-align: center; border-right: 1px solid #E3F2FD; }
+  .kpi-card:last-child { border-right: none; }
+  .kpi-card .kpi-icon { font-size: 22px; margin-bottom: 4px; }
+  .kpi-card .kpi-value { font-size: 22px; font-weight: 800; color: #0D2B4E; line-height: 1; }
+  .kpi-card .kpi-unit { font-size: 11px; color: #2C5F8A; font-weight: 600; }
+  .kpi-card .kpi-label { font-size: 12px; color: #555; margin-top: 2px; }
+  .kpi-card.highlight { background: #E3F2FD; }
+  .kpi-card.highlight .kpi-value { color: #1565C0; }
+  .kpi-card.danger .kpi-value { color: #C62828; }
+  .kpi-card.success .kpi-value { color: #1B5E20; }
+
+  /* Overall Progress */
+  .overall-bar-wrap {
+    background: #E3F2FD; border-radius: 8px; height: 28px;
+    position: relative; overflow: visible;
+  }
+  .overall-bar {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, #1565C0, #42A5F5);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px; color: #fff; font-weight: 800; font-size: 14px;
+    transition: width .5s ease;
+  }
+  .target-marker {
+    position: absolute; top: -6px; bottom: -6px;
+    width: 2px; background: #E53935;
+    transform: translateX(-50%);
+  }
+  .target-label {
+    position: absolute; top: -20px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px; color: #E53935; font-weight: 700; white-space: nowrap;
+  }
+
+  /* Main Content */
+  .main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .section {
+    padding: 14px 16px;
+    border-right: 1px solid #E3F2FD;
+    border-bottom: 1px solid #E3F2FD;
+  }
+  .section-title {
+    font-size: 13px; font-weight: 800; color: #0D2B4E;
+    border-bottom: 2px solid #1565C0;
+    padding-bottom: 6px; margin-bottom: 10px;
+  }
+
+  /* Budget Bars */
+  .budget-item { margin-bottom: 8px; }
+  .budget-label { font-size: 12px; font-weight: 700; color: #0D2B4E; margin-bottom: 3px; }
+  .budget-bar-wrap {
+    background: #E3F2FD; border-radius: 6px; height: 20px;
+    position: relative; overflow: visible;
+  }
+  .budget-bar {
+    height: 100%; border-radius: 6px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 6px; color: #fff; font-size: 11px; font-weight: 700;
+    min-width: 28px;
+  }
+  .budget-target-line {
+    position: absolute; top: -3px; bottom: -3px;
+    width: 2px; background: #E53935;
+    transform: translateX(-50%);
+  }
+  .budget-meta { font-size: 11px; color: #555; margin-top: 2px; text-align: right; }
+
+  /* Status Grid */
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .status-item {
+    border-radius: 8px; padding: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-count { font-size: 20px; font-weight: 800; line-height: 1; }
+  .status-name { font-size: 11px; color: #555; }
+  .status-pct { font-size: 11px; font-weight: 700; color: #888; }
+
+  /* Urgent */
+  .urgent-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 6px;
+    border-left: 4px solid #C62828;
+    background: #FFF5F5; margin-bottom: 6px;
+  }
+  .urgent-badge {
+    font-size: 10px; font-weight: 800; padding: 2px 6px;
+    border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .urgent-badge.red { background: #C62828; color: #fff; }
+  .urgent-badge.orange { background: #E65100; color: #fff; }
+  .urgent-badge.yellow { background: #F57F17; color: #fff; }
+  .urgent-text { font-size: 11px; color: #333; flex: 1; }
+  .urgent-pct { font-size: 12px; font-weight: 800; color: #C62828; white-space: nowrap; }
+
+  /* Footer */
+  .footer {
+    background: #F0F6FB; padding: 10px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid #E3F2FD;
+  }
+  .footer-note { font-size: 11px; color: #555; }
+  .dl-btns { display: flex; gap: 8px; }
+  .dl-btn {
+    padding: 6px 14px; border: none; border-radius: 6px;
+    font-family: 'Sarabun', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .dl-btn.png { background: #1565C0; color: #fff; }
+  .dl-btn.jpg { background: #1B5E20; color: #fff; }
+  .dl-btn:hover { opacity: .85; }
+
+  /* Refresh btn */
+  .refresh-btn {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #1565C0; color: #fff; border: none;
+    border-radius: 50%; width: 48px; height: 48px;
+    font-size: 20px; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    z-index: 100;
+  }
+  .refresh-btn:hover { background: #0D47A1; }
+</style>
+</head>
+<body>
+<!-- Loading Screen -->
+<div id="loadingScreen">
+<div class="spinner"></div>
+<p id="loadingMsg">🔄 กำลังดึงข้อมูลจาก Google Sheets...</p>
+</div>
+<!-- Main Sheet -->
+<div class="sheet" id="sheet" style="display:none;">
+<!-- Header -->
+<div class="header">
+<div class="header-left">
+<h1>📊 สรุปผลการดำเนินงานและการเบิกจ่ายงบประมาณ</h1>
+<p>สำนักงานชลประทานที่ 11 (สชป.11) | กรมชลประทาน | ปีงบประมาณ พ.ศ. 2569</p>
+</div>
+<div class="header-right">
+<div class="date-badge" id="dateBadge">📅 กำลังโหลด...</div>
+<div class="target-badge">🎯 เป้าหมาย Q4: พ.ร.บ. 75% | กันเหลื่อม 100%</div>
+</div>
+</div>
+<!-- KPI Row -->
+<div class="kpi-row" id="kpiRow">
+<div class="kpi-card highlight">
+<div class="kpi-icon">💰</div>
+<div class="kpi-value" id="kpiAlloc">-</div>
+<div class="kpi-unit">ล้านบาท</div>
+<div class="kpi-label">วงเงินรวมทุกแหล่งงบ</div>
+</div>
+<div class="kpi-card highlight">
+<div class="kpi-icon">📈</div>
+<div class="kpi-value" id="kpiPaid">-</div>
+<div class="kpi-unit">ล้านบาท</div>
+<div class="kpi-label" id="kpiPaidLabel">เบิกจ่ายสะสม</div>
+</div>
+<div class="kpi-card success">
+<div class="kpi-icon">✅</div>
+<div class="kpi-value" id="kpiDone">-</div>
+<div class="kpi-unit">รายการ</div>
+<div class="kpi-label" id="kpiDoneLabel">แล้วเสร็จ</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon">🔨</div>
+<div class="kpi-value" id="kpiInProgress">-</div>
+<div class="kpi-unit">รายการ</div>
+<div class="kpi-label">ระหว่างดำเนินการ</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon">🛒</div>
+<div class="kpi-value" id="kpiProcure">-</div>
+<div class="kpi-unit">รายการ</div>
+<div class="kpi-label">ระหว่างจัดซื้อ</div>
+</div>
+<div class="kpi-card danger">
+<div class="kpi-icon">❌</div>
+<div class="kpi-value" id="kpiCancelled">-</div>
+<div class="kpi-unit">รายการ</div>
+<div class="kpi-label">ยกเลิก/คืนเงิน</div>
+</div>
+</div>
+<!-- Overall Progress -->
+<div style="padding: 14px 20px 10px; border-bottom: 1px solid #E3F2FD; position: relative;">
+<div class="section-title" style="margin-bottom: 10px;">📊 ภาพรวมผลการเบิกจ่ายรวมทุกแหล่งงบ</div>
+<div style="position: relative; margin-top: 20px;">
+<div class="overall-bar-wrap">
+<div class="overall-bar" id="overallBar" style="width: 0%">
+<span id="overallPct">0%</span>
+</div>
+<div class="target-marker" style="left: 75%">
+<div class="target-label">เป้า 75%</div>
+</div>
+</div>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-top: 4px;">
+<span id="overallDetail">-</span>
+<span id="overallGap" style="color: #C62828; font-weight: 700;"></span>
+</div>
+</div>
+<!-- Main Content -->
+<div class="main-content">
+<!-- Left: Budget by Source -->
+<div class="section">
+<div class="section-title">💰 ผลการเบิกจ่ายจำแนกตามแหล่งงบประมาณ</div>
+<div id="budgetBars">
+<div style="color:#888; font-size:13px;">กำลังโหลด...</div>
+</div>
+<div style="font-size: 10px; color: #888; margin-top: 6px;">
+<span style="color:#E53935;">▏</span> เส้นแดง = เป้าหมาย Q4 | ตัวเลข = % เบิกจ่าย
+      </div>
+</div>
+<!-- Right: Status + Urgent -->
+<div style="display: flex; flex-direction: column;">
+<!-- Status -->
+<div class="section" style="border-right: none;">
+<div class="section-title" id="statusTitle">📋 สถานะโครงการทั้งหมด</div>
+<div class="status-grid" id="statusGrid">
+<div style="color:#888; font-size:13px; grid-column: span 2;">กำลังโหลด...</div>
+</div>
+</div>
+<!-- Urgent -->
+<div class="section" style="border-right: none; flex: 1;">
+<div class="section-title" style="color:#C62828; border-bottom-color:#C62828;">⚠️ แหล่งงบที่ต้องเร่งรัดเป็นพิเศษ</div>
+<div id="urgentList">
+<div style="color:#888; font-size:13px;">กำลังโหลด...</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="footer">
+<div class="footer-note">
+      📌 ระบบติดตามการเบิกจ่ายงบลงทุน สชป.11 |
+      <span style="color:#1565C0; font-weight:700;">https://monitoringrio11-ctrl.github.io/main_dashboard/</span>
+</div>
+<div class="dl-btns">
+<button class="dl-btn png" onclick="downloadImage('png')">⬇ ดาวน์โหลด PNG</button>
+<button class="dl-btn jpg" onclick="downloadImage('jpeg')">⬇ ดาวน์โหลด JPEG</button>
+</div>
+</div>
+</div>
+<!-- Refresh Button -->
+<button class="refresh-btn" onclick="loadData()" title="รีเฟรชข้อมูล">🔄</button>
+<script>
+// ============================================================
+// API URL — เดียวกับ dashboard
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwNA-k_rn8RYahrFTmgkmh4_OfFYqBX3OBXClFu5OFxLESvRu39ZYc876UBeUPW5l9B/exec';
+
+// สีตามแหล่งงบ (ตรงกับ dashboard)
+const SRC_COLORS = {
+  'งบ พ.ร.บ.69':              'linear-gradient(90deg,#1565C0,#42A5F5)',
+  'งบ พ.ร.บ.69 (เพิ่มเติม)': 'linear-gradient(90deg,#1976D2,#64B5F6)',
+  'งบกลาง กัน 68':            'linear-gradient(90deg,#1B5E20,#4CAF50)',
+  'งบ พ.ร.บ. กัน 68':        'linear-gradient(90deg,#E65100,#FF8A65)',
+  'เงินทุนหมุนเวียน':         'linear-gradient(90deg,#6A1B9A,#AB47BC)',
+  'งบกลาง 69':                'linear-gradient(90deg,#0D47A1,#1976D2)',
+};
+
+const SRC_SOLID_COLORS = {
+  'งบ พ.ร.บ.69':              '#1565C0',
+  'งบ พ.ร.บ.69 (เพิ่มเติม)': '#1976D2',
+  'งบกลาง กัน 68':            '#1B5E20',
+  'งบ พ.ร.บ. กัน 68':        '#E65100',
+  'เงินทุนหมุนเวียน':         '#6A1B9A',
+  'งบกลาง 69':                '#0D47A1',
+};
+
+const fm = n => n == null ? '0' : Number(n).toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmInt = n => n == null ? '0' : Math.round(Number(n)).toLocaleString('th-TH');
+
+// ============================================================
+// โหลดข้อมูลจาก API
+// ============================================================
+async function loadData() {
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('sheet').style.display = 'none';
+  document.getElementById('loadingMsg').textContent = '🔄 กำลังดึงข้อมูลจาก Google Sheets...';
+
+  try {
+    const res = await fetch(API_URL, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderAll(data);
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('sheet').style.display = 'block';
+  } catch (e) {
+    document.getElementById('loadingMsg').textContent = '❌ โหลดข้อมูลไม่สำเร็จ: ' + e.message + ' — กด 🔄 เพื่อลองใหม่';
+  }
+}
+
+// ============================================================
+// Render ทุกส่วน
+// ============================================================
+function renderAll(data) {
+  const SD = data.SD || [];
+  const ALL = data.ALL || [];
+  const updated = data.updated || '-';
+  const total = (data.total || 0) + (data.cancelled || 0);
+  const cancelled = data.cancelled || 0;
+  const active = data.total || 0;
+
+  // คำนวณ KPI จาก SD
+  let totalAlloc = 0, totalPaid = 0;
+  SD.forEach(s => { totalAlloc += s.alloc || 0; totalPaid += s.paid || 0; });
+  const overallPct = totalAlloc > 0 ? (totalPaid / totalAlloc * 100) : 0;
+
+  // คำนวณสถานะจาก ALL
+  let done = 0, inProgress = 0, procure = 0;
+  ALL.forEach(row => {
+    const status = row[7] || '';
+    if (status === 'แล้วเสร็จ') done++;
+    else if (status === 'อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ') inProgress++;
+    else if (status === 'ระหว่างจัดซื้อ/จัดจ้าง') procure++;
+  });
+
+  // Header date
+  document.getElementById('dateBadge').textContent = '📅 ข้อมูล ณ ' + updated;
+
+  // KPI
+  document.getElementById('kpiAlloc').textContent = fmInt(totalAlloc);
+  document.getElementById('kpiPaid').textContent = fmInt(totalPaid);
+  document.getElementById('kpiPaidLabel').textContent = 'เบิกจ่ายสะสม (' + overallPct.toFixed(2) + '%)';
+  document.getElementById('kpiDone').textContent = done.toLocaleString('th-TH');
+  document.getElementById('kpiDoneLabel').textContent = 'แล้วเสร็จ (' + (total > 0 ? (done/total*100).toFixed(1) : 0) + '%)';
+  document.getElementById('kpiInProgress').textContent = inProgress.toLocaleString('th-TH');
+  document.getElementById('kpiProcure').textContent = procure.toLocaleString('th-TH');
+  document.getElementById('kpiCancelled').textContent = cancelled.toLocaleString('th-TH');
+
+  // Overall bar
+  const barW = Math.min(overallPct, 100).toFixed(2);
+  document.getElementById('overallBar').style.width = barW + '%';
+  document.getElementById('overallPct').textContent = overallPct.toFixed(2) + '%';
+  document.getElementById('overallDetail').textContent =
+    'เบิกจ่ายแล้ว ' + fm(totalPaid) + ' ล้านบาท จากวงเงิน ' + fm(totalAlloc) + ' ล้านบาท';
+  const gap = 75 - overallPct;
+  if (gap > 0) {
+    document.getElementById('overallGap').textContent =
+      '⚠️ ขาดเป้า Q4 อีก ' + gap.toFixed(2) + '% (≈ ' + fm(totalAlloc * gap / 100) + ' ล้านบาท)';
+  } else {
+    document.getElementById('overallGap').style.color = '#1B5E20';
+    document.getElementById('overallGap').textContent = '✅ บรรลุเป้าหมาย Q4 แล้ว';
+  }
+
+  // Budget bars
+  renderBudgetBars(SD);
+
+  // Status
+  renderStatus(done, inProgress, procure, cancelled, total);
+
+  // Urgent
+  renderUrgent(SD);
+}
+
+function renderBudgetBars(SD) {
+  const container = document.getElementById('budgetBars');
+  if (!SD.length) { container.innerHTML = '<div style="color:#888;font-size:13px;">ไม่พบข้อมูลแหล่งงบ</div>'; return; }
+
+  container.innerHTML = SD.map(s => {
+    const pct = s.pct || 0;
+    const target = s.target || 75;
+    const barW = Math.min(pct, 100).toFixed(2);
+    const color = SRC_COLORS[s.label] || 'linear-gradient(90deg,#999,#bbb)';
+    const minW = pct < 5 ? 'min-width:28px;' : '';
+    return `
+      <div class="budget-item">
+        <div class="budget-label">${s.label}</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:${barW}%;background:${color};${minW}">${pct.toFixed(1)}%</div>
+          <div class="budget-target-line" style="left:${target}%"></div>
+        </div>
+        <div class="budget-meta">${fm(s.paid)} ลบ. / ${fm(s.alloc)} ลบ.</div>
+      </div>`;
+  }).join('');
+}
+
+function renderStatus(done, inProgress, procure, cancelled, total) {
+  document.getElementById('statusTitle').textContent = '📋 สถานะโครงการทั้งหมด ' + total.toLocaleString('th-TH') + ' รายการ';
+  const pct = n => total > 0 ? (n/total*100).toFixed(1) + '%' : '0%';
+  document.getElementById('statusGrid').innerHTML = `
+    <div class="status-item" style="background:#E8F5E9">
+      <div class="status-dot" style="background:#1B5E20"></div>
+      <div class="status-info">
+        <div class="status-count" style="color:#1B5E20">${done.toLocaleString('th-TH')}</div>
+        <div class="status-name">แล้วเสร็จ</div>
+        <div class="status-pct">${pct(done)}</div>
+      </div>
+    </div>
+    <div class="status-item" style="background:#E3F2FD">
+      <div class="status-dot" style="background:#1565C0"></div>
+      <div class="status-info">
+        <div class="status-count" style="color:#1565C0">${inProgress.toLocaleString('th-TH')}</div>
+        <div class="status-name">ระหว่างดำเนินการ</div>
+        <div class="status-pct">${pct(inProgress)}</div>
+      </div>
+    </div>
+    <div class="status-item" style="background:#FFF8E1">
+      <div class="status-dot" style="background:#F57F17"></div>
+      <div class="status-info">
+        <div class="status-count" style="color:#F57F17">${procure.toLocaleString('th-TH')}</div>
+        <div class="status-name">ระหว่างจัดซื้อ</div>
+        <div class="status-pct">${pct(procure)}</div>
+      </div>
+    </div>
+    <div class="status-item" style="background:#FFF5F5">
+      <div class="status-dot" style="background:#C62828"></div>
+      <div class="status-info">
+        <div class="status-count" style="color:#C62828">${cancelled.toLocaleString('th-TH')}</div>
+        <div class="status-name">ยกเลิก/คืนเงิน</div>
+        <div class="status-pct">${pct(cancelled)}</div>
+      </div>
+    </div>`;
+}
+
+function renderUrgent(SD) {
+  const container = document.getElementById('urgentList');
+  if (!SD.length) { container.innerHTML = '<div style="color:#888;font-size:13px;">ไม่พบข้อมูล</div>'; return; }
+
+  // จัดเรียงตามความเร่งด่วน: ต่ำสุดก่อน
+  const sorted = [...SD].sort((a, b) => a.pct - b.pct);
+
+  container.innerHTML = sorted.map(s => {
+    const pct = s.pct || 0;
+    const target = s.target || 75;
+    const gap = target - pct;
+    if (gap <= 0) return ''; // บรรลุเป้าแล้ว ไม่แสดง
+
+    let badgeClass, badgeText, itemStyle;
+    if (pct === 0) {
+      badgeClass = 'red'; badgeText = 'วิกฤต';
+      itemStyle = 'border-left-color:#C62828; background:#FFF5F5;';
+    } else if (pct < 30) {
+      badgeClass = 'red'; badgeText = 'เร่งด่วน';
+      itemStyle = 'border-left-color:#C62828; background:#FFF5F5;';
+    } else if (pct < target) {
+      badgeClass = 'orange'; badgeText = 'ต้องติดตาม';
+      itemStyle = 'border-left-color:#E65100; background:#FFF3E0;';
+    } else {
+      return '';
+    }
+
+    return `
+      <div class="urgent-item" style="${itemStyle}">
+        <div class="urgent-badge ${badgeClass}">${badgeText}</div>
+        <div class="urgent-text">${s.label} | วงเงิน ${fm(s.alloc)} ลบ. | ขาดเป้า ${gap.toFixed(1)}%</div>
+        <div class="urgent-pct">${pct.toFixed(1)}%</div>
+      </div>`;
+  }).join('');
+
+  if (!container.innerHTML.trim()) {
+    container.innerHTML = '<div style="color:#1B5E20; font-size:13px; font-weight:700;">✅ ทุกแหล่งงบบรรลุเป้าหมายแล้ว!</div>';
+  }
+}
+
+// ============================================================
+// ดาวน์โหลดรูปภาพ
+// ============================================================
+async function downloadImage(format) {
+  const sheet = document.getElementById('sheet');
+  const dlBtns = document.querySelector('.dl-btns');
+  const refreshBtn = document.querySelector('.refresh-btn');
+  dlBtns.style.display = 'none';
+  refreshBtn.style.display = 'none';
+
+  try {
+    if (typeof html2canvas !== 'undefined') {
+      const canvas = await html2canvas(sheet, {
+        scale: 2, useCORS: true,
+        backgroundColor: '#ffffff', logging: false
+      });
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const quality = format === 'jpeg' ? 0.95 : 1.0;
+      const dataUrl = canvas.toDataURL(mimeType, quality);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      // ชื่อไฟล์ใช้วันที่จาก API
+      const dateStr = document.getElementById('dateBadge').textContent.replace('📅 ข้อมูล ณ ', '').replace(/\s/g, '');
+      a.download = `สชป11-สรุปผล-${dateStr}.${format === 'jpeg' ? 'jpg' : 'png'}`;
+      a.click();
+    } else {
+      alert('💡 วิธีบันทึกรูป:\n1. กด Ctrl+P (Print)\n2. เลือก "Save as PDF"\n3. หรือ Screenshot ด้วย Snipping Tool');
+    }
+  } catch(e) {
+    alert('กรุณาใช้ Screenshot หรือ Print to PDF แทนครับ');
+  } finally {
+    dlBtns.style.display = 'flex';
+    refreshBtn.style.display = 'block';
+  }
+}
+
+// ============================================================
+// เริ่มโหลดข้อมูลทันที
+// ============================================================
+loadData();
+</script>
+</body>
+</html>
