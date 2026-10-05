@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบติดตามผลการดำเนินงาน - สำนักงานชลประทานที่ 11</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Sarabun', sans-serif;
+      background-color: #f8fafc;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 🌊 แถบบาร์บนสุดแบบ Compact (กระชับ ไม่ซ้ำซ้อนกับหน้าลูก) */
+    .top-navbar {
+      background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(13, 71, 161, 0.2);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .brand-title {
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ปุ่มกดสลับเมนู */
+    .nav-tabs-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .tab-btn.active {
+      background-color: #ffffff;
+      color: #0d47a1;
+      border-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    /* พื้นที่แสดง iframe เต็มความสูง */
+    .content-area {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+    }
+
+    .dashboard-iframe.active {
+      display: block;
+    }
+
+    /* แถบ Footer */
+    .main-footer {
+      text-align: center;
+      padding: 5px 10px;
+      background-color: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #475569;
+      flex-shrink: 0;
+    }
+
+    /* 📱 การปรับแต่งบนมือถือ */
+    @media (max-width: 768px) {
+      .top-navbar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+      .brand-title {
+        font-size: 0.95rem;
+      }
+      .nav-tabs-group {
+        width: 100%;
+        justify-content: center;
+        overflow-x: auto;
+      }
+      .tab-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-navbar">
+    <div class="brand-title">🌊 ระบบติดตามงาน สชป.11</div>
+    <div class="nav-tabs-group">
+      <button class="tab-btn active" onclick="switchTab('overview', this)">📌 ภาพรวม</button>
+      <button class="tab-btn" onclick="switchTab('urgent', this)">🚀 รายการเร่งรัด</button>
+      <button class="tab-btn" onclick="switchTab('step', this)">📋 สรุปขั้นตอนจัดซื้อ/จัดจ้าง</button>
+      <button class="tab-btn" onclick="switchTab('infographic', this)">📊 Infographic</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <iframe id="frame-overview" class="dashboard-iframe active" src="https://pointsuperduck.github.io/DashAllRio11/?v=1.2"></iframe>
+    <iframe id="frame-urgent" class="dashboard-iframe" src="https://pointsuperduck.github.io/dashboard--11/?v=1.2"></iframe>
+    <iframe id="frame-step" class="dashboard-iframe" src="https://pointsuperduck.github.io/DashAllRio11/step_summary.html?v=1.2"></iframe>
+    <iframe id="frame-infographic" class="dashboard-iframe" src="https://monitoringrio11-ctrl.github.io/main_dashboard/infographic.html"></iframe>
+  </div>
+
+  <div class="main-footer">
+    💡 <strong>จัดทำโดย:</strong> ฝ่ายติดตามและประเมินผล ส่วนแผนงาน สำนักงานชลประทานที่ 11
+  </div>
+
+  <script>
+    function switchTab(type, btnElement) {
+      // 1. ซ่อน iframe ทั้งหมด
+      document.querySelectorAll('.dashboard-iframe').forEach(frame => {
+        frame.classList.remove('active');
+      });
+
+      // 2. แสดง iframe ตัวที่เลือก
+      const activeFrame = document.getElementById('frame-' + type);
+      if (activeFrame) {
+        activeFrame.classList.add('active');
+      }
+
+      // 3. ปรับสถานะปุ่มกด
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>
