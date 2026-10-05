@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สรุปผลการเบิกจ่าย สชป.11 - One Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #0D2B4E;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 16px;
+    }
+
+    .sheet {
+      width: 100%;
+      max-width: 1100px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,.4);
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0D2B4E 0%, #1565C0 60%, #1976D2 100%);
+      padding: 20px 28px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-left h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .header-left p {
+      color: #90CAF9;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .header-right {
+      text-align: right;
+    }
+    .header-right .date-badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .header-right .target-badge {
+      margin-top: 6px;
+      background: #E65100;
+      border-radius: 8px;
+      padding: 4px 12px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    /* KPI Row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+      border-bottom: 2px solid #E3F2FD;
+    }
+    .kpi-card {
+      padding: 14px 10px;
+      text-align: center;
+      border-right: 1px solid #E3F2FD;
+    }
+    .kpi-card:last-child { border-right: none; }
+    .kpi-card .kpi-icon { font-size: 22px; margin-bottom: 4px; }
+    .kpi-card .kpi-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0D2B4E;
+      line-height: 1;
+    }
+    .kpi-card .kpi-unit { font-size: 11px; color: #2C5F8A; font-weight: 600; }
+    .kpi-card .kpi-label { font-size: 12px; color: #555; margin-top: 2px; }
+    .kpi-card.highlight { background: #E3F2FD; }
+    .kpi-card.highlight .kpi-value { color: #1565C0; }
+    .kpi-card.danger .kpi-value { color: #C62828; }
+    .kpi-card.success .kpi-value { color: #1B5E20; }
+
+    /* Main Content */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .section {
+      padding: 14px 16px;
+      border-right: 1px solid #E3F2FD;
+      border-bottom: 1px solid #E3F2FD;
+    }
+    .section:nth-child(even) { border-right: none; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1565C0;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #1565C0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Budget bars */
+    .budget-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .budget-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0D2B4E;
+      width: 140px;
+      flex-shrink: 0;
+    }
+    .budget-bar-wrap {
+      flex: 1;
+      background: #E3F2FD;
+      border-radius: 4px;
+      height: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .budget-bar {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      min-width: 30px;
+      transition: width .5s;
+    }
+    .budget-target-line {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: #E53935;
+      opacity: .7;
+    }
+    .budget-meta {
+      font-size: 11px;
+      color: #555;
+      width: 80px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Status donut */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #F8FAFC;
+    }
+    .status-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-info .status-count {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .status-info .status-pct {
+      font-size: 11px;
+      color: #555;
+    }
+    .status-info .status-name {
+      font-size: 11px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    /* Urgent list */
+    .urgent-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      margin-bottom: 5px;
+      background: #FFF8F6;
+      border-left: 3px solid #E65100;
+    }
+    .urgent-item.critical { background: #FFF5F5; border-left-color: #C62828; }
+    .urgent-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .urgent-badge.red { background: #C62828; color: #fff; }
+    .urgent-badge.orange { background: #E65100; color: #fff; }
+    .urgent-badge.yellow { background: #F57F17; color: #fff; }
+    .urgent-text { font-size: 11px; color: #333; flex: 1; }
+    .urgent-pct { font-size: 12px; font-weight: 800; color: #C62828; flex-shrink: 0; }
+
+    /* Overall progress */
+    .overall-bar-wrap {
+      background: #E3F2FD;
+      border-radius: 8px;
+      height: 28px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .overall-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #1565C0, #42A5F5);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+    }
+    .overall-bar span {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .target-marker {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: #E53935;
+    }
+    .target-label {
+      position: absolute;
+      top: -18px;
+      font-size: 10px;
+      color: #E53935;
+      font-weight: 700;
+      transform: translateX(-50%);
+    }
+
+    /* Footer */
+    .footer {
+      background: #F0F6FB;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #BBDEFB;
+    }
+    .footer-note { font-size: 11px; color: #2C5F8A; }
+    .dl-btns { display: flex; gap: 8px; }
+    .dl-btn {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .dl-btn.png { background: #1565C0; color: #fff; }
+    .dl-btn.jpg { background: #1B5E20; color: #fff; }
+    .dl-btn:hover { opacity: .85; }
+  </style>
+</head>
+<body>
+
+<div class="sheet" id="sheet">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>📊 สรุปผลการดำเนินงานและการเบิกจ่ายงบประมาณ</h1>
+      <p>สำนักงานชลประทานที่ 11 (สชป.11) | กรมชลประทาน | ปีงบประมาณ พ.ศ. 2569</p>
+    </div>
+    <div class="header-right">
+      <div class="date-badge">📅 ข้อมูล ณ วันที่ 8 กันยายน 2569</div>
+      <div class="target-badge">🎯 เป้าหมาย Q4: พ.ร.บ. 75% | กันเหลื่อม 100%</div>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card highlight">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-value">5,427</div>
+      <div class="kpi-unit">ล้านบาท</div>
+      <div class="kpi-label">วงเงินรวมทุกแหล่งงบ</div>
+    </div>
+    <div class="kpi-card highlight">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-value">3,831</div>
+      <div class="kpi-unit">ล้านบาท</div>
+      <div class="kpi-label">เบิกจ่ายสะสม (70.58%)</div>
+    </div>
+    <div class="kpi-card success">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-value">577</div>
+      <div class="kpi-unit">รายการ</div>
+      <div class="kpi-label">แล้วเสร็จ (64.90%)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🔨</div>
+      <div class="kpi-value">282</div>
+      <div class="kpi-unit">รายการ</div>
+      <div class="kpi-label">ระหว่างดำเนินการ</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🛒</div>
+      <div class="kpi-value">11</div>
+      <div class="kpi-unit">รายการ</div>
+      <div class="kpi-label">ระหว่างจัดซื้อ</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-icon">❌</div>
+      <div class="kpi-value">19</div>
+      <div class="kpi-unit">รายการ</div>
+      <div class="kpi-label">ยกเลิก/คืนเงิน</div>
+    </div>
+  </div>
+
+  <!-- Overall Progress -->
+  <div style="padding: 14px 20px 10px; border-bottom: 1px solid #E3F2FD; position: relative;">
+    <div class="section-title" style="margin-bottom: 10px;">📊 ภาพรวมผลการเบิกจ่ายรวมทุกแหล่งงบ</div>
+    <div style="position: relative; margin-top: 20px;">
+      <div class="overall-bar-wrap">
+        <div class="overall-bar" style="width: 70.58%">
+          <span>70.58%</span>
+        </div>
+        <div class="target-marker" style="left: 75%">
+          <div class="target-label">เป้า 75%</div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-top: 4px;">
+      <span>เบิกจ่ายแล้ว 3,831.01 ล้านบาท จากวงเงิน 5,427.65 ล้านบาท</span>
+      <span style="color: #C62828; font-weight: 700;">⚠️ ขาดเป้า Q4 อีก 4.42% (≈ 239.8 ล้านบาท)</span>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- Left: Budget by Source -->
+    <div class="section">
+      <div class="section-title">💰 ผลการเบิกจ่ายจำแนกตามแหล่งงบประมาณ</div>
+
+      <!-- งบ พ.ร.บ.69 -->
+      <div class="budget-item">
+        <div class="budget-label">งบ พ.ร.บ.69</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:53.21%; background: linear-gradient(90deg,#1565C0,#42A5F5)">53.21%</div>
+          <div class="budget-target-line" style="left:75%"></div>
+        </div>
+        <div class="budget-meta">1,275.60 ลบ.</div>
+      </div>
+
+      <!-- งบกลาง กัน 68 -->
+      <div class="budget-item">
+        <div class="budget-label">งบกลาง กัน 68</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:90.67%; background: linear-gradient(90deg,#1B5E20,#4CAF50)">90.67%</div>
+          <div class="budget-target-line" style="left:100%"></div>
+        </div>
+        <div class="budget-meta">2,049.71 ลบ.</div>
+      </div>
+
+      <!-- งบ พ.ร.บ. กัน 68 -->
+      <div class="budget-item">
+        <div class="budget-label">งบ พ.ร.บ. กัน 68</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:82.30%; background: linear-gradient(90deg,#E65100,#FF8A65)">82.30%</div>
+          <div class="budget-target-line" style="left:100%"></div>
+        </div>
+        <div class="budget-meta">430.24 ลบ.</div>
+      </div>
+
+      <!-- งบ พ.ร.บ.69 เพิ่มเติม -->
+      <div class="budget-item">
+        <div class="budget-label">งบ พ.ร.บ.69 (เพิ่มเติม)</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:72.32%; background: linear-gradient(90deg,#1976D2,#64B5F6)">72.32%</div>
+          <div class="budget-target-line" style="left:75%"></div>
+        </div>
+        <div class="budget-meta">84.92 ลบ.</div>
+      </div>
+
+      <!-- งบ พ.ร.บ.62-66 เงินพับ -->
+      <div class="budget-item">
+        <div class="budget-label">งบ พ.ร.บ.62-66 (เงินพับ)</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:40.99%; background: linear-gradient(90deg,#F57F17,#FFB74D)">40.99%</div>
+          <div class="budget-target-line" style="left:100%"></div>
+        </div>
+        <div class="budget-meta">68.16 ลบ.</div>
+      </div>
+
+      <!-- เงินทุนหมุนเวียน -->
+      <div class="budget-item">
+        <div class="budget-label">เงินทุนหมุนเวียน</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:12.46%; background: linear-gradient(90deg,#6A1B9A,#AB47BC)">12.46%</div>
+          <div class="budget-target-line" style="left:75%"></div>
+        </div>
+        <div class="budget-meta">7.30 ลบ.</div>
+      </div>
+
+      <!-- งบกลาง 69 -->
+      <div class="budget-item">
+        <div class="budget-label">งบกลาง 69</div>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:2%; background: #C62828">0%</div>
+          <div class="budget-target-line" style="left:75%"></div>
+        </div>
+        <div class="budget-meta">0 ลบ.</div>
+      </div>
+
+      <div style="font-size: 10px; color: #888; margin-top: 6px;">
+        <span style="color:#E53935">▏</span> เส้นแดง = เป้าหมาย Q4 | ตัวเลข = % เบิกจ่าย
+      </div>
+    </div>
+
+    <!-- Right: Status + Urgent -->
+    <div style="display: flex; flex-direction: column;">
+
+      <!-- Status -->
+      <div class="section" style="border-right: none;">
+        <div class="section-title">📋 สถานะโครงการทั้งหมด 889 รายการ</div>
+        <div class="status-grid">
+          <div class="status-item" style="background:#E8F5E9">
+            <div class="status-dot" style="background:#1B5E20"></div>
+            <div class="status-info">
+              <div class="status-count" style="color:#1B5E20">577</div>
+              <div class="status-name">แล้วเสร็จ</div>
+              <div class="status-pct">64.90%</div>
+            </div>
+          </div>
+          <div class="status-item" style="background:#E3F2FD">
+            <div class="status-dot" style="background:#1565C0"></div>
+            <div class="status-info">
+              <div class="status-count" style="color:#1565C0">282</div>
+              <div class="status-name">ระหว่างดำเนินการ</div>
+              <div class="status-pct">31.72%</div>
+            </div>
+          </div>
+          <div class="status-item" style="background:#FFF8E1">
+            <div class="status-dot" style="background:#F57F17"></div>
+            <div class="status-info">
+              <div class="status-count" style="color:#F57F17">11</div>
+              <div class="status-name">ระหว่างจัดซื้อ</div>
+              <div class="status-pct">1.24%</div>
+            </div>
+          </div>
+          <div class="status-item" style="background:#FFF5F5">
+            <div class="status-dot" style="background:#C62828"></div>
+            <div class="status-info">
+              <div class="status-count" style="color:#C62828">19</div>
+              <div class="status-name">ยกเลิก/คืนเงิน</div>
+              <div class="status-pct">2.14%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Urgent -->
+      <div class="section" style="border-right: none; flex: 1;">
+        <div class="section-title" style="color:#C62828; border-bottom-color:#C62828;">⚠️ แหล่งงบที่ต้องเร่งรัดเป็นพิเศษ</div>
+
+        <div class="urgent-item critical">
+          <div class="urgent-badge red">วิกฤต</div>
+          <div class="urgent-text">งบกลาง 69 | วงเงิน 22 ลบ.</div>
+          <div class="urgent-pct">0%</div>
+        </div>
+
+        <div class="urgent-item critical">
+          <div class="urgent-badge red">วิกฤต</div>
+          <div class="urgent-text">เงินทุนหมุนเวียน | วงเงิน 58.62 ลบ.</div>
+          <div class="urgent-pct">12.46%</div>
+        </div>
+
+        <div class="urgent-item">
+          <div class="urgent-badge orange">เร่งด่วน</div>
+          <div class="urgent-text">งบ พ.ร.บ.62-66 (เงินพับ) | วงเงิน 166.28 ลบ.</div>
+          <div class="urgent-pct">40.99%</div>
+        </div>
+
+        <div class="urgent-item">
+          <div class="urgent-badge orange">เร่งด่วน</div>
+          <div class="urgent-text">งบ พ.ร.บ.69 | วงเงิน 2,397.27 ลบ. | ขาดเป้า 21.79%</div>
+          <div class="urgent-pct">53.21%</div>
+        </div>
+
+        <div class="urgent-item" style="border-left-color:#F57F17; background:#FFFDE7">
+          <div class="urgent-badge yellow">ติดตาม</div>
+          <div class="urgent-text">งบ พ.ร.บ. กัน 68 | วงเงิน 522.77 ลบ. | ขาดเป้า 17.70%</div>
+          <div class="urgent-pct">82.30%</div>
+        </div>
+
+        <div class="urgent-item" style="border-left-color:#F57F17; background:#FFFDE7">
+          <div class="urgent-badge yellow">ติดตาม</div>
+          <div class="urgent-text">งบกลาง กัน 68 | วงเงิน 2,260.70 ลบ. | ขาดเป้า 9.33%</div>
+          <div class="urgent-pct">90.67%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-note">
+      📌 ระบบติดตามการเบิกจ่ายงบลงทุน สชป.11 | 
+      <span style="color:#1565C0; font-weight:700;">https://monitoringrio11-ctrl.github.io/main_dashboard/</span>
+    </div>
+    <div class="dl-btns">
+      <button class="dl-btn png" onclick="downloadImage('png')">⬇ ดาวน์โหลด PNG</button>
+      <button class="dl-btn jpg" onclick="downloadImage('jpeg')">⬇ ดาวน์โหลด JPEG</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function downloadImage(format) {
+  const sheet = document.getElementById('sheet');
+  const dlBtns = document.querySelector('.dl-btns');
+  dlBtns.style.display = 'none';
+
+  try {
+    // ใช้ html2canvas ถ้ามี หรือ fallback
+    if (typeof html2canvas !== 'undefined') {
+      const canvas = await html2canvas(sheet, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const quality = format === 'jpeg' ? 0.95 : 1.0;
+      const dataUrl = canvas.toDataURL(mimeType, quality);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `สชป11-สรุปผล-8กย69.${format === 'jpeg' ? 'jpg' : 'png'}`;
+      a.click();
+    } else {
+      // Fallback: แจ้งให้ใช้ Print
+      alert('💡 วิธีบันทึกรูป:\n1. กด Ctrl+P (Print)\n2. เลือก "Save as PDF"\n3. หรือ Screenshot ด้วย Snipping Tool');
+    }
+  } catch(e) {
+    alert('กรุณาใช้ Screenshot หรือ Print to PDF แทนครับ');
+  } finally {
+    dlBtns.style.display = 'flex';
+  }
+}
+</script>
+<!-- html2canvas สำหรับ export รูป -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
