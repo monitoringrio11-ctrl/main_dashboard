@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infographic สรุปข้อมูล สชป.11</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sarabun', sans-serif; background: #F0F6FB; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .toolbar {
+      background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(13,71,161,.2);
+    }
+    .toolbar-title {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .tab-btn {
+      padding: 5px 12px;
+      border: 1px solid rgba(255,255,255,.4);
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,.3); }
+    .tab-btn.active { background: #fff; color: #0d47a1; border-color: #fff; }
+
+    .dl-btn {
+      margin-left: auto;
+      padding: 5px 14px;
+      background: #E65100;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .dl-btn:hover { background: #BF360C; }
+
+    .status-bar {
+      background: #E3F2FD;
+      padding: 4px 16px;
+      font-size: 12px;
+      color: #1565C0;
+      flex-shrink: 0;
+      border-bottom: 1px solid #BBDEFB;
+    }
+
+    #container { flex: 1; width: 100%; overflow: hidden; }
+
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(240,246,251,.9);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px;
+      font-size: 16px; color: #1565C0; font-weight: 600;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #BBDEFB;
+      border-top-color: #1565C0;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="toolbar">
+<span class="toolbar-title">📊 Infographic สรุปข้อมูล สชป.11</span>
+<button class="tab-btn active" onclick="showTab(0,this)">📌 ภาพรวม KPI</button>
+<button class="tab-btn" onclick="showTab(1,this)">🏗️ สถาปัตยกรรม</button>
+<button class="tab-btn" onclick="showTab(2,this)">💰 แหล่งงบ</button>
+<button class="tab-btn" onclick="showTab(3,this)">⚠️ เร่งรัด</button>
+<button class="tab-btn" onclick="showTab(4,this)">📈 ขั้นตอน</button>
+<button class="dl-btn" onclick="exportSVG()">⬇ ดาวน์โหลด SVG</button>
+</div>
+<div class="status-bar" id="statusBar">🔄 กำลังโหลดข้อมูล...</div>
+<div style="position:relative;flex:1;display:flex;flex-direction:column;">
+<div class="loading-overlay" id="loadingOverlay">
+<div class="spinner"></div>
+<span>กำลังดึงข้อมูลจาก API...</span>
+</div>
+<div id="container" style="flex:1;"></div>
+</div>
+<script src="https://unpkg.com/@antv/infographic@latest/dist/infographic.min.js"></script>
+<script>
+// ============================================================
+// Resource Loader
+// ============================================================
+const svgTextCache = new Map();
+const pendingRequests = new Map();
+
+AntVInfographic.registerResourceLoader(async (config) => {
+  const { data, scene } = config;
+  try {
+    const key = `${scene}::${data}`;
+    let svgText;
+    if (svgTextCache.has(key)) { svgText = svgTextCache.get(key); }
+    else if (pendingRequests.has(key)) { svgText = await pendingRequests.get(key); }
+    else {
+      const p = (async () => {
+        try {
+          let url = scene === 'icon'
+            ? `https://api.iconify.design/${data}.svg`
+            : scene === 'illus'
+            ? `https://raw.githubusercontent.com/balazser/undraw-svg-collection/refs/heads/main/svgs/${data}.svg`
+            : null;
+          if (!url) return null;
+          const r = await fetch(url, { referrerPolicy: 'no-referrer' });
+          if (!r.ok) return null;
+          const t = await r.text();
+          if (!t || !t.trim().startsWith('<svg')) return null;
+          svgTextCache.set(key, t);
+          return t;
+        } catch(e) { return null; }
+      })();
+      pendingRequests.set(key, p);
+      try { svgText = await p; } catch(e) { return null; } finally { pendingRequests.delete(key); }
+    }
+    if (!svgText) return null;
+    const res = AntVInfographic.loadSVGResource(svgText);
+    if (!res) { svgTextCache.delete(key); return null; }
+    return res;
+  } catch(e) { return null; }
+});
+
+// ============================================================
+// API
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwNA-k_rn8RYahrFTmgkmh4_OfFYqBX3OBXClFu5OFxLESvRu39ZYc876UBeUPW5l9B/exec';
+
+let apiData = null;
+let currentTab = 0;
+let infographic = null;
+
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    apiData = await res.json();
+    document.getElementById('loadingOverlay').style.display = 'none';
+    const updated = apiData.updated || '-';
+    const total = apiData.total || 0;
+    const cancelled = apiData.cancelled || 0;
+    document.getElementById('statusBar').textContent =
+      `✅ ข้อมูล ณ ${updated} | ทั้งหมด ${total+cancelled} รายการ | ใช้งาน ${total} | ยกเลิก ${cancelled}`;
+    renderTab(currentTab);
+  } catch(e) {
+    document.getElementById('loadingOverlay').innerHTML =
+      '<span style="color:#C62828">❌ โหลดข้อมูลไม่สำเร็จ กรุณา Refresh</span>';
+    document.getElementById('statusBar').textContent = '❌ ไม่สามารถเชื่อมต่อ API ได้';
+  }
+}
+
+// ============================================================
+// Build Syntax
+// ============================================================
+function buildSyntax(tabIdx) {
+  if (!apiData) return '';
+
+  const SD = apiData.SD || [];
+  const total = apiData.total || 0;
+  const cancelled = apiData.cancelled || 0;
+  const updated = apiData.updated || '-';
+  const ALL = apiData.ALL || [];
+  const risk = ALL.filter(d => d[7] !== 'ยกเลิก' && d[5] < (SD.find(s=>s.label===d[1])?.target||75)).length;
+  const totalAlloc = SD.reduce((s,v)=>s+v.alloc,0).toFixed(0);
+  const totalPaid = SD.reduce((s,v)=>s+v.paid,0).toFixed(0);
+  const totalPct = totalAlloc > 0 ? (totalPaid/totalAlloc*100).toFixed(1) : 0;
+
+  if (tabIdx === 0) {
+    // ภาพรวม KPI
+    return `infographic list-grid-badge-card
+theme
+  palette #1565C0 #1976D2 #1B5E20 #E65100 #6A1B9A #0D47A1 #C62828
+data
+  title ภาพรวมการเบิกจ่ายงบลงทุน สชป.11
+  desc ข้อมูล ณ ${updated} | งบประมาณรายจ่ายลงทุน ปีงบประมาณ พ.ศ. 2569
+  items
+    - label วงเงินรวม
+      value ${totalAlloc}
+      desc ล้านบาท | ${SD.length} แหล่งงบประมาณ
+      icon mdi/currency-usd
+    - label เบิกจ่ายสะสม
+      value ${totalPaid}
+      desc ล้านบาท | ร้อยละ ${totalPct}%
+      icon mdi/chart-line
+    - label รายการทั้งหมด
+      value ${total+cancelled}
+      desc รายการ | ใช้งาน ${total} | ยกเลิก ${cancelled}
+      icon mdi/format-list-bulleted
+    - label ต้องเร่งรัด
+      value ${risk}
+      desc รายการ | ต่ำกว่าเป้าหมาย
+      icon mdi/alert-circle
+    - label หน่วยงาน
+      value ${(apiData.AD||[]).length}
+      desc หน่วยงาน | ทั่วพื้นที่ สชป.11
+      icon mdi/office-building
+    - label กิจกรรม
+      value ${(apiData.ACTS||[]).length}
+      desc ประเภทกิจกรรม
+      icon mdi/tag-multiple`;
+  }
+
+  if (tabIdx === 1) {
+    // สถาปัตยกรรม
+    return `infographic sequence-roadmap-vertical-simple
+theme
+  palette #1565C0 #1976D2 #2196F3 #42A5F5 #90CAF9
+data
+  title สถาปัตยกรรมระบบ Dashboard สชป.11
+  desc ขั้นตอนการทำงานจากข้อมูลต้นทางสู่การแสดงผล Real-time
+  items
+    - label CenProject
+      desc ระบบติดตามโครงการกรมชลประทาน | ส่งออกข้อมูล Excel รายสัปดาห์
+      icon mdi/database
+    - label Google Sheets
+      desc ฐานข้อมูลกลาง | My Sheet (${total+cancelled}+ แถว) + Adjust (สถิติรายวัน)
+      icon mdi/google-spreadsheet
+    - label Google Apps Script
+      desc API Server | Dynamic Classification | Router: /exec, ?page=track, ?page=chart
+      icon mdi/code-tags
+    - label GitHub Pages
+      desc Hosting ฟรี | DashAllRio11 + dashboard--11 + step_summary
+      icon mdi/github
+    - label Dashboard
+      desc แสดงผล Real-time | Chart.js 4.4.0 | Responsive Design
+      icon mdi/monitor-dashboard`;
+  }
+
+  if (tabIdx === 2) {
+    // แหล่งงบ
+    const items = SD.map(s =>
+      `    - label ${s.label}
+      value ${s.alloc.toFixed(0)}
+      desc ล้านบาท | เบิก ${s.paid.toFixed(0)} ลบ. (${s.pct}%) | เป้า Q4: ${s.target}%
+      icon mdi/cash-multiple`
+    ).join('\n');
+    return `infographic list-row-horizontal-icon-arrow
+theme
+  palette ${SD.map(s=>s.color).join(' ')}
+data
+  title แหล่งงบประมาณ ปีงบประมาณ 2569
+  desc จำแนกอัตโนมัติด้วย Dynamic Classification | ข้อมูล ณ ${updated}
+  items
+${items}`;
+  }
+
+  if (tabIdx === 3) {
+    // รายการเร่งรัด Top 6
+    const urgent = ALL
+      .filter(d => d[7] !== 'ยกเลิก' && d[5] < (SD.find(s=>s.label===d[1])?.target||75))
+      .sort((a,b) => a[5]-b[5])
+      .slice(0, 6);
+    const items = urgent.map(d =>
+      `    - label ${d[0]}
+      value ${d[5]}
+      desc ${d[2].substring(0,40)}... | จัดสรร ${d[3]} ลบ.
+      icon mdi/alert-circle-outline`
+    ).join('\n');
+    return `infographic chart-bar-plain-text
+theme
+  palette #C62828 #E65100 #F57F17 #F9A825 #FDD835 #FFEE58
+data
+  title รายการที่ต้องเร่งรัด (ร้อยละต่ำสุด 6 อันดับ)
+  desc เบิกจ่ายต่ำกว่าเป้าหมาย | ข้อมูล ณ ${updated}
+  items
+${items}`;
+  }
+
+  if (tabIdx === 4) {
+    // ขั้นตอนจัดซื้อ
+    const STEP_SUMMARY = apiData.STEP_SUMMARY || {};
+    const agencies = Object.keys(STEP_SUMMARY).slice(0, 6);
+    const items = agencies.map(ag => {
+      const srcs = STEP_SUMMARY[ag];
+      const firstSrc = Object.keys(srcs)[0];
+      const data = srcs[firstSrc] || {};
+      const total = data.total?.cnt || 0;
+      const step7 = data.step7?.cnt || 0;
+      const pct = total > 0 ? Math.round(step7/total*100) : 0;
+      const shortName = ag.replace('โครงการส่งน้ำและบำรุงรักษา','คบ.').replace('โครงการก่อสร้างชลประทานที่11','คส.ชป.11').replace('โครงการชลประทาน','คป.').substring(0,20);
+      return `    - label ${shortName}
+      value ${pct}
+      desc ทำสัญญาแล้ว ${step7}/${total} รายการ
+      icon mdi/file-sign`;
+    }).join('\n');
+    return `infographic chart-bar-plain-text
+theme
+  palette #1565C0 #1976D2 #2196F3 #42A5F5 #64B5F6 #90CAF9
+data
+  title ความคืบหน้าขั้นตอนจัดซื้อจัดจ้าง (% ทำสัญญาแล้ว)
+  desc รายหน่วยงาน | ข้อมูล ณ ${updated}
+  items
+${items}`;
+  }
+
+  return '';
+}
+
+// ============================================================
+// Render
+// ============================================================
+function renderTab(idx) {
+  if (!apiData) return;
+  const syntax = buildSyntax(idx);
+  if (!syntax) return;
+
+  if (!infographic) {
+    infographic = new AntVInfographic.Infographic({
+      container: '#container',
+      width: '100%',
+      height: '100%',
+    });
+  }
+  infographic.render(syntax);
+  document.fonts?.ready.then(() => infographic.render(syntax)).catch(()=>{});
+}
+
+function showTab(idx, btn) {
+  currentTab = idx;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  renderTab(idx);
+}
+
+async function exportSVG() {
+  if (!infographic) return;
+  try {
+    const svgDataUrl = await infographic.toDataURL({ type: 'svg' });
+    const tabNames = ['ภาพรวม-KPI','สถาปัตยกรรม','แหล่งงบ','เร่งรัด','ขั้นตอน'];
+    const a = document.createElement('a');
+    a.href = svgDataUrl;
+    a.download = `สชป11-infographic-${tabNames[currentTab]}.svg`;
+    a.click();
+  } catch(e) {
+    alert('ไม่สามารถ Export ได้: ' + e.message);
+  }
+}
+
+// ============================================================
+// Init
+// ============================================================
+fetchData();
+</script>
+</body>
+</html>
