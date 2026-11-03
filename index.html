@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบติดตามผลการดำเนินงาน - สำนักงานชลประทานที่ 11</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Sarabun', sans-serif;
+      background-color: #f8fafc;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 🌊 แถบบาร์บนสุดแบบ Compact (กระชับ ไม่ซ้ำซ้อนกับหน้าลูก) */
+    .top-navbar {
+      background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(13, 71, 161, 0.2);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .brand-title {
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ปุ่มกดสลับเมนู */
+    .nav-tabs-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .tab-btn.active {
+      background-color: #ffffff;
+      color: #0d47a1;
+      border-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    /* พื้นที่แสดง iframe เต็มความสูง */
+    .content-area {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+    }
+
+    .dashboard-iframe.active {
+      display: block;
+    }
+
+    /* แถบ Footer */
+    .main-footer {
+      text-align: center;
+      padding: 5px 10px;
+      background-color: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #475569;
+      flex-shrink: 0;
+    }
+
+    /* 📱 การปรับแต่งบนมือถือ */
+    @media (max-width: 768px) {
+      .top-navbar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+      .brand-title {
+        font-size: 0.95rem;
+      }
+      .nav-tabs-group {
+        width: 100%;
+        justify-content: center;
+        overflow-x: auto;
+      }
+      .tab-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-navbar">
+    <div class="brand-title">🌊 ระบบติดตามงาน สชป.11</div>
+    <div class="nav-tabs-group">
+      <button class="tab-btn active" onclick="switchTab('overview', this)">📌 ภาพรวม</button>
+      <button class="tab-btn" onclick="switchTab('urgent', this)">🚀 รายการเร่งรัด</button>
+      <button class="tab-btn" onclick="switchTab('step', this)">📋 สรุปขั้นตอนจัดซื้อ/จัดจ้าง</button>
+      <button class="tab-btn" onclick="switchTab('infographic', this)">📊 Infographic</button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <iframe id="frame-overview" class="dashboard-iframe active"></iframe>
+    <iframe id="frame-urgent" class="dashboard-iframe" src="https://monitoringrio11-ctrl.github.io/dashboard--11/?v=2.0.0"></iframe>
+    <iframe id="frame-step" class="dashboard-iframe" src="https://monitoringrio11-ctrl.github.io/DashAllRio11/step_summary.html?v=2.0.0"></iframe>
+    <iframe id="frame-infographic" class="dashboard-iframe" src="https://monitoringrio11-ctrl.github.io/main_dashboard/infographic.html?v=2.0"></iframe>
+  </div>
+
+  <div class="main-footer">
+    💡 <strong>จัดทำโดย:</strong> ฝ่ายติดตามและประเมินผล ส่วนแผนงาน สำนักงานชลประทานที่ 11
+  </div>
+
+  <script>
+    // โหลดหน้า 📌 ภาพรวม (ที่เพิ่ม % ในโดนัทชาร์ตแล้ว) ลงใน #frame-overview โดยคงแถบปุ่มเมนู 4 ปุ่มด้านบนไว้ครบถ้วน
+    const overviewHtmlContent = "<!DOCTYPE html>\n<html lang=\"th\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Dashboard รายงานงบประมาณและสถานะดำเนินงาน - ชป.11</title>\n  \n  <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n  <link href=\"https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap\" rel=\"stylesheet\">\n  <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"><\/script>\n\n  <style>\n    body {\n      font-family: 'Sarabun', sans-serif;\n      background-color: #f0f4f8;\n      color: #333;\n      padding: 20px;\n      padding-bottom: 60px !important;\n    }\n    .main-header {\n      background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);\n      color: white;\n      border-radius: 12px;\n      padding: 20px 25px;\n      box-shadow: 0 4px 15px rgba(13, 71, 161, 0.2);\n    }\n    .card-custom {\n      border: none;\n      border-radius: 12px;\n      box-shadow: 0 4px 12px rgba(0,0,0,0.05);\n      background-color: #ffffff;\n      height: 100%;\n    }\n    .section-title-disburse {\n      border-left: 5px solid #0d47a1;\n      padding-left: 12px;\n      font-weight: 700;\n      color: #0d47a1;\n      margin-bottom: 20px;\n    }\n    .section-title-status {\n      border-left: 5px solid #2e7d32;\n      padding-left: 12px;\n      font-weight: 700;\n      color: #2e7d32;\n      margin-bottom: 20px;\n    }\n    .source-header {\n      color: white;\n      padding: 12px 20px;\n      border-top-left-radius: 12px;\n      border-top-right-radius: 12px;\n      font-weight: 700;\n      font-size: 1.05rem;\n    }\n    .badge-agency {\n      background-color: #e8eaf6;\n      color: #1a237e;\n      font-weight: 600;\n      font-size: 0.88rem;\n      padding: 5px 10px;\n      border-radius: 6px;\n    }\n    .chart-container {\n      position: relative;\n      height: 270px;\n      width: 100%;\n    }\n    .progress-thin {\n      height: 8px;\n      border-radius: 4px;\n    }\n\n    /* =========================================================\n       ✨ เพิ่มสไตล์กล่องหมุนโหลด (Loading Overlay & Spinner)\n       ========================================================= */\n    .loading-overlay {\n      position: fixed;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background-color: rgba(240, 244, 248, 0.95);\n      backdrop-filter: blur(4px);\n      display: flex;\n      flex-direction: column;\n      justify-content: center;\n      align-items: center;\n      z-index: 9999;\n      transition: opacity 0.3s ease, visibility 0.3s ease;\n    }\n\n    .spinner {\n      width: 50px;\n      height: 50px;\n      border: 5px solid #e2e8f0;\n      border-top: 5px solid #0d47a1;\n      border-radius: 50%;\n      animation: spin 0.9s linear infinite;\n      margin-bottom: 16px;\n      box-shadow: 0 4px 10px rgba(13, 71, 161, 0.15);\n    }\n\n    @keyframes spin {\n      0% { transform: rotate(0deg); }\n      100% { transform: rotate(360deg); }\n    }\n\n    .loading-text {\n      font-size: 16px;\n      font-weight: 700;\n      color: #0d47a1;\n      letter-spacing: 0.5px;\n    }\n\n    .loading-overlay.hidden {\n      opacity: 0;\n      visibility: hidden;\n    }\n\n    /* ========================================================\n       📱 ปรับแต่งการแสดงผลบนมือถือ (Mobile Responsive)\n       ======================================================== */\n    @media (max-width: 768px) {\n      body {\n        padding: 8px !important;\n        font-size: 14px;\n      }\n\n      .card-container, .summary-cards {\n        display: flex;\n        flex-direction: column;\n        gap: 10px;\n      }\n\n      .card {\n        width: 100% !important;\n        padding: 12px !important;\n        margin-bottom: 10px !important;\n        border-radius: 10px !important;\n        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;\n      }\n\n      .table-responsive {\n        display: block;\n        width: 100%;\n        overflow-x: auto;\n        white-space: nowrap;\n      }\n\n      th, td {\n        padding: 8px 10px !important;\n        font-size: 13px;\n      }\n\n      h1, .header-title, .title {\n        font-size: 1.25rem !important;\n        line-height: 1.3 !important;\n        margin-bottom: 8px !important;\n        text-align: center;\n      }\n\n      h2, .sub-title {\n        font-size: 1.1rem !important;\n        margin-bottom: 6px !important;\n      }\n\n      h3 {\n        font-size: 1.0rem !important;\n      }\n\n      header, .header-container, .top-bar {\n        padding: 10px 12px !important;\n        margin-bottom: 12px !important;\n        border-radius: 8px;\n      }\n\n      .subtitle-text, .update-date, p {\n        font-size: 0.85rem !important;\n        color: #F5F5F5 !important;\n      }\n    }\n  </style>\n</head>\n<body>\n\n<div id=\"loadingOverlay\" class=\"loading-overlay\">\n  <div class=\"spinner\"></div>\n  <div class=\"loading-text\">🔄 กำลังโหลดข้อมูล...</div>\n</div>\n\n<div class=\"container-fluid\">\n  \n  <div class=\"main-header mb-4 d-flex justify-content-between align-items-center\">\n    <div>\n      <h3 class=\"m-0 fw-bold\">🌊 Dashboard รายงานงบประมาณและสถานะดำเนินงาน สำนักงานชลประทานที่ 11</h3>\n      <p class=\"m-0 mt-1 opacity-75\" id=\"updateText\">ข้อมูล ณ วันที่: กำลังโหลด...</p>\n    </div>\n    <div class=\"text-end\">\n      <span class=\"badge bg-warning text-dark fs-6 px-3 py-2\">รวมทั้งหมด: <span id=\"totalCount\">0</span> รายการ</span>\n    </div>\n  </div>\n\n  <div class=\"mb-5\">\n    <div class=\"d-flex justify-content-between align-items-center mb-3\">\n      <h4 class=\"section-title-disburse m-0\">💰 1. ผลการเบิกจ่ายงบประมาณ (จำแนกตามแหล่งงบประมาณ ➔ เรียงตาม % เบิกจ่ายมากไปน้อย)</h4>\n      <div class=\"w-25\">\n        <input type=\"text\" id=\"searchKeyword\" class=\"form-control form-control-sm\" placeholder=\"🔍 ค้นหาหน่วยงาน / แหล่งงบ...\" onkeyup=\"filterDisbursementData()\">\n      </div>\n    </div>\n    \n    <div class=\"row g-4 mb-4\">\n      <div class=\"col-lg-5\">\n        <div class=\"card card-custom p-3\">\n          <h6 class=\"fw-bold text-center text-primary mb-3\">🍩 สัดส่วนงบประมาณจัดสรร (ล้านบาท)</h6>\n          <div class=\"chart-container\"><canvas id=\"disburseDonutChart\"></canvas></div>\n        </div>\n      </div>\n      <div class=\"col-lg-7\">\n        <div class=\"card card-custom p-3\">\n          <h6 class=\"fw-bold text-center text-primary mb-3\">📊 ร้อยละผลการเบิกจ่ายแยกตามประเภทงบ (%)</h6>\n          <div class=\"chart-container\"><canvas id=\"disburseBarChart\"></canvas></div>\n        </div>\n      </div>\n    </div>\n\n    <div id=\"disbursementSourcesContainer\"></div>\n  </div>\n\n  <hr class=\"my-5\">\n\n  <div class=\"mb-5\">\n    <h4 class=\"section-title-status\">📌 2. สรุปผลการดำเนินงาน </h4>\n    \n    <div class=\"row g-4 mb-4\">\n      <div class=\"col-lg-5\">\n        <div class=\"card card-custom p-3\">\n          <h6 class=\"fw-bold text-center text-success mb-3\">🍕 สัดส่วนผลการดำเนินงานทุกโครงการ</h6>\n          <div class=\"chart-container\"><canvas id=\"statusPieChart\"></canvas></div>\n        </div>\n      </div>\n      <div class=\"col-lg-7\">\n        <div class=\"card card-custom p-3\">\n          <h6 class=\"fw-bold text-center text-success mb-3\">📊 จำนวนรายการตามขั้นตอน แยกตามแหล่งงบประมาณ</h6>\n          <div class=\"chart-container\"><canvas id=\"statusBarChart\"></canvas></div>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"card card-custom p-4\">\n      <h6 class=\"fw-bold text-success mb-3\">📋 ตารางสรุปจำนวนรายการตามขั้นตอนการดำเนินงาน</h6>\n      <div class=\"table-responsive\">\n        <table class=\"table table-bordered align-middle text-center\">\n          <thead class=\"table-success\">\n            <tr>\n              <th class=\"text-start\">แหล่งงบประมาณ</th>\n              <th style=\"color: #2e7d32;\">แล้วเสร็จ (≥99%)</th>\n              <th style=\"color: #0288d1;\">อยู่ระหว่างก่อสร้าง/จัดซื้อ (เบิกจ่ายแล้ว หรือ มีข้อผูกพัน)</th>\n              <th style=\"color: #ed6c02;\">ระหว่างจัดซื้อ/จัดจ้าง (ยังไม่เบิกจ่าย & ไม่มีข้อผูกพัน)</th>\n              <th style=\"color: #d32f2f;\">ยกเลิก</th>\n              <th>รวมจำนวนรายการ</th>\n            </tr>\n          </thead>\n          <tbody id=\"statusTableBody\">\n            <tr><td colspan=\"6\" class=\"text-center text-muted py-4\">กำลังโหลดข้อมูล...</td></tr>\n          </tbody>\n        </table>\n      </div>\n    </div>\n  </div>\n\n</div>\n\n<script>\n// 🌟 DYNAMIC: สีและลำดับประจำประเภทงบประมาณ (รองรับทุกปีงบประมาณอัตโนมัติ)\nlet sdColorMap = {};\nlet sdOrderList = [];\n\nfunction getBudgetColor(label, apiColor) {\n  if (apiColor) return apiColor;\n  if (sdColorMap[label]) return sdColorMap[label];\n  label = String(label || '');\n  if (label.indexOf('พ.ร.บ.') >= 0 && label.indexOf('กัน') < 0 && label.indexOf('เพิ่มเติม') < 0) return '#1565C0';\n  if (label.indexOf('กลาง') >= 0 && label.indexOf('กัน') < 0) return '#0D47A1';\n  if (label.indexOf('กลาง') >= 0 && label.indexOf('กัน') >= 0) return '#1B5E20';\n  if (label.indexOf('พ.ร.บ.') >= 0 && label.indexOf('กัน') >= 0) return '#E65100';\n  if (label.indexOf('เพิ่มเติม') >= 0) return '#42A5F5';\n  if (label.indexOf('หมุนเวียน') >= 0) return '#6A1B9A';\n  return '#757575';\n}\n\nfunction getSrcSortOrder(label) {\n  const idx = sdOrderList.indexOf(label);\n  if (idx >= 0) return idx;\n  label = String(label || '');\n  if (label.indexOf('พ.ร.บ.') >= 0 && label.indexOf('กัน') < 0 && label.indexOf('เพิ่มเติม') < 0) return 101;\n  if (label.indexOf('กลาง') >= 0 && label.indexOf('กัน') < 0) return 102;\n  if (label.indexOf('กลาง') >= 0 && label.indexOf('กัน') >= 0) return 103;\n  if (label.indexOf('พ.ร.บ.') >= 0 && label.indexOf('กัน') >= 0) return 104;\n  if (label.indexOf('เพิ่มเติม') >= 0) return 105;\n  if (label.indexOf('หมุนเวียน') >= 0) return 106;\n  return 199;\n}\n\nfunction detectFiscalYear(data) {\n  if (data && data.fiscalYear) return String(data.fiscalYear);\n  const SD = (data && data.SD) || [];\n  for (let i = 0; i < SD.length; i++) {\n    const lbl = SD[i].label || '';\n    if (lbl.indexOf('กัน') < 0 && lbl.indexOf('เหลื่อม') < 0) {\n      const m = lbl.match(/(\\d{2})/);\n      if (m) return String(2500 + parseInt(m[1], 10));\n    }\n  }\n  for (let i = 0; i < SD.length; i++) {\n    const lbl = SD[i].label || '';\n    if (lbl.indexOf('กัน') >= 0 || lbl.indexOf('เหลื่อม') >= 0) {\n      const m = lbl.match(/(\\d{2})/);\n      if (m) return String(2500 + parseInt(m[1], 10) + 1);\n    }\n  }\n  return '';\n}\n\n// สีประจำขั้นตอนการดำเนินงาน\nconst STATUS_COLORS = {\n  'แล้วเสร็จ': '#2e7d32',                           // เขียว\n  'อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ': '#0288d1',   // ฟ้า\n  'ระหว่างจัดซื้อ/จัดจ้าง': '#ed6c02',                // ส้ม\n  'ยกเลิก': '#d32f2f'                               // แดง\n};\n\nlet rawAllProjects = [];\nlet disburseDonutInstance = null;\nlet disburseBarInstance = null;\nlet statusPieInstance = null;\nlet statusBarInstance = null;\n\n// ========================================================\n// 🌟 ฟังก์ชันดึงสถานะโครงการ\n// ========================================================\nfunction evaluateProjectStatus(proj) {\n  if (!proj || !Array.isArray(proj)) return 'ระหว่างจัดซื้อ/จัดจ้าง';\n  return proj[7] || 'ระหว่างจัดซื้อ/จัดจ้าง';\n}\n\n// คำนวณสรุปขั้นตอนตามแหล่งงบประมาณ\nfunction calculateStatusSummary(projects) {\n  const summary = {};\n\n  projects.forEach(p => {\n    const src = p[1] || 'อื่นๆ';\n    const statusKey = evaluateProjectStatus(p);\n\n    if (!summary[src]) {\n      summary[src] = {\n        'แล้วเสร็จ': 0,\n        'อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ': 0,\n        'ระหว่างจัดซื้อ/จัดจ้าง': 0,\n        'ยกเลิก': 0,\n        'totalCount': 0\n      };\n    }\n\n    summary[src][statusKey] += 1;\n    summary[src]['totalCount'] += 1;\n  });\n\n  return summary;\n}\n\n// ========================================================\n// 1. ฟังก์ชันจัดกลุ่มและสร้างตารางเบิกจ่าย\n// ========================================================\nfunction renderGroupedDisbursement(projects) {\n  const container = document.getElementById('disbursementSourcesContainer');\n  container.innerHTML = '';\n\n  if (!projects || projects.length === 0) {\n    container.innerHTML = '<div class=\"card card-custom p-4 text-center text-muted\">ไม่พบข้อมูลผลการเบิกจ่าย</div>';\n    return;\n  }\n\n  const sourceGroup = {};\n  projects.forEach(p => {\n    const agency = p[0] || 'ไม่ระบุหน่วยงาน';\n    const src = p[1] || 'อื่นๆ';\n    const alloc = Number(p[3]) || 0;\n    const paid = Number(p[4]) || 0;\n\n    if (!sourceGroup[src]) sourceGroup[src] = {};\n    if (!sourceGroup[src][agency]) {\n      sourceGroup[src][agency] = { cnt: 0, alloc: 0, paid: 0 };\n    }\n\n    sourceGroup[src][agency].cnt += 1;\n    sourceGroup[src][agency].alloc += alloc;\n    sourceGroup[src][agency].paid += paid;\n  });\n\n  const sortedSources = Object.keys(sourceGroup).sort((a, b) => getSrcSortOrder(a) - getSrcSortOrder(b));\n  sortedSources.forEach(srcName => {\n    const agenciesObj = sourceGroup[srcName];\n    const themeColor = getBudgetColor(srcName);\n\n    let totalSrcAlloc = 0;\n    let totalSrcPaid = 0;\n    let totalSrcCnt = 0;\n\n    const agencyList = Object.keys(agenciesObj).map(agName => {\n      const item = agenciesObj[agName];\n      totalSrcAlloc += item.alloc;\n      totalSrcPaid += item.paid;\n      totalSrcCnt += item.cnt;\n      const pct = item.alloc > 0 ? Math.round((item.paid / item.alloc) * 10000) / 100 : 0;\n      return { name: agName, cnt: item.cnt, alloc: item.alloc, paid: item.paid, pct: pct };\n    });\n\n    agencyList.sort((a, b) => b.pct - a.pct);\n\n    const totalSrcPct = totalSrcAlloc > 0 ? Math.round((totalSrcPaid / totalSrcAlloc) * 10000) / 100 : 0;\n\n    let agencyRowsHtml = '';\n    agencyList.forEach((ag, idx) => {\n      let pColor = 'bg-danger';\n      if (ag.pct >= 75) pColor = 'bg-success';\n      else if (ag.pct >= 50) pColor = 'bg-info';\n      else if (ag.pct >= 30) pColor = 'bg-warning';\n\n      agencyRowsHtml += `\n        <tr>\n          <td class=\"text-center text-muted fw-bold\">${idx + 1}</td>\n          <td><span class=\"badge-agency\">${ag.name}</span></td>\n          <td class=\"text-center fw-semibold\">${ag.cnt.toLocaleString()} รายการ</td>\n          <td class=\"text-end fw-semibold\">${ag.alloc.toLocaleString('th-TH', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</td>\n          <td class=\"text-end fw-semibold\">${ag.paid.toLocaleString('th-TH', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</td>\n          <td style=\"width: 220px;\">\n            <div class=\"d-flex align-items-center\">\n              <span class=\"me-2 fw-bold text-primary\" style=\"min-width: 50px; text-align: right; font-size: 0.95rem;\">${ag.pct}%</span>\n              <div class=\"progress progress-thin flex-grow-1\">\n                <div class=\"progress-bar ${pColor}\" style=\"width: ${Math.min(ag.pct, 100)}%;\"></div>\n              </div>\n            </div>\n          </td>\n        </tr>\n      `;\n    });\n\n    const sourceCardHtml = `\n      <div class=\"card card-custom mb-4 overflow-hidden\">\n        <div class=\"source-header d-flex justify-content-between align-items-center\" style=\"background-color: ${themeColor};\">\n          <div>\n            <span>📌 ${srcName}</span>\n            <span class=\"badge bg-white text-dark ms-2\">${totalSrcCnt.toLocaleString()} รายการ</span>\n          </div>\n          <div class=\"fs-6 fw-normal\">\n            จัดสรร: <b>${totalSrcAlloc.toLocaleString('th-TH', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</b> ลบ. | \n            เบิกจ่าย: <b>${totalSrcPaid.toLocaleString('th-TH', {minimumFractionDigits: 3, maximumFractionDigits: 3})}</b> ลบ. \n            (<span class=\"fw-bold\">${totalSrcPct}%</span>)\n          </div>\n        </div>\n        <div class=\"card-body p-0\">\n          <div class=\"table-responsive\">\n            <table class=\"table table-hover align-middle m-0\">\n              <thead class=\"table-light\">\n                <tr>\n                  <th style=\"width: 50px;\" class=\"text-center\">#</th>\n                  <th>หน่วยงาน</th>\n                  <th class=\"text-center\">จำนวนรายการ</th>\n                  <th class=\"text-end\">งบจัดสรร (ลบ.)</th>\n                  <th class=\"text-end\">ผลรวมเบิกจ่าย (ลบ.)</th>\n                  <th class=\"text-center text-primary fw-bold\">ความก้าวหน้า (% เบิกจ่าย) ⬇</th>\n                </tr>\n              </thead>\n              <tbody>\n                ${agencyRowsHtml}\n              </tbody>\n            </table>\n          </div>\n        </div>\n      </div>\n    `;\n\n    container.insertAdjacentHTML('beforeend', sourceCardHtml);\n  });\n}\n\n// ========================================================\n// 2. ฟังก์ชันวาดกราฟเบิกจ่ายภาพรวม\n// ========================================================\nfunction renderDisbursementCharts(sdData) {\n  const ctx1 = document.getElementById('disburseDonutChart').getContext('2d');\n  if (disburseDonutInstance) disburseDonutInstance.destroy();\n  const totalAlloc = sdData.reduce((sum, item) => sum + (Number(item.alloc) || 0), 0);\n\n  disburseDonutInstance = new Chart(ctx1, {\n    type: 'doughnut',\n    data: {\n      labels: sdData.map(i => {\n        const sharePct = totalAlloc > 0 ? ((Number(i.alloc) || 0) / totalAlloc * 100) : 0;\n        return `${i.label} (${sharePct.toFixed(2)}%)`;\n      }),\n      datasets: [{\n        data: sdData.map(i => i.alloc),\n        backgroundColor: sdData.map(i => getBudgetColor(i.label, i.color))\n      }]\n    },\n    options: {\n      responsive: true,\n      maintainAspectRatio: false,\n      cutout: '58%',\n      plugins: {\n        legend: { position: 'bottom' },\n        tooltip: {\n          callbacks: {\n            label: function(context) {\n              const val = Number(context.raw) || 0;\n              const pct = totalAlloc > 0 ? (val / totalAlloc * 100).toFixed(2) : '0.00';\n              const rawLabel = sdData[context.dataIndex] ? sdData[context.dataIndex].label : context.label;\n              return `${rawLabel}: ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ลบ. (${pct}%)`;\n            }\n          }\n        }\n      }\n    },\n    plugins: [{\n      id: 'donutAllocPercentLabels',\n      afterDatasetsDraw(chart) {\n        const { ctx, chartArea } = chart;\n        const meta = chart.getDatasetMeta(0);\n        if (!meta || !meta.data || totalAlloc <= 0) return;\n\n        ctx.save();\n        // 1. แสดงยอดรวมจัดสรรตรงกลางวงโดนัท\n        if (chartArea) {\n          const cx = (chartArea.left + chartArea.right) / 2;\n          const cy = (chartArea.top + chartArea.bottom) / 2;\n          ctx.textAlign = 'center';\n          ctx.textBaseline = 'middle';\n          ctx.font = \"600 11px 'Sarabun', sans-serif\";\n          ctx.fillStyle = '#64748b';\n          ctx.fillText('รวมจัดสรร', cx, cy - 14);\n          ctx.font = \"700 13px 'Sarabun', sans-serif\";\n          ctx.fillStyle = '#0d47a1';\n          ctx.fillText(totalAlloc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), cx, cy + 2);\n          ctx.font = \"600 10px 'Sarabun', sans-serif\";\n          ctx.fillStyle = '#64748b';\n          ctx.fillText('ล้านบาท (100%)', cx, cy + 17);\n        }\n\n        // 2. แสดงตัวเลข % สัดส่วนที่ได้รับจัดสรรลงบนชิ้นโดนัทแต่ละแหล่งงบ\n        ctx.font = \"700 12px 'Sarabun', sans-serif\";\n        ctx.textAlign = 'center';\n        ctx.textBaseline = 'middle';\n        meta.data.forEach((arc, index) => {\n          if (!chart.getDataVisibility(index)) return;\n          const val = Number(sdData[index]?.alloc) || 0;\n          const pct = (val / totalAlloc) * 100;\n          if (pct <= 0) return;\n          if (pct < 2.5) return; // ชิ้นที่เล็กมากดูค่า % ได้จาก Legend ด้านล่างและ Tooltip เพื่อไม่ให้ซ้อนทับกัน\n          const pos = arc.tooltipPosition();\n          const text = pct.toFixed(1) + '%';\n          ctx.lineWidth = 3;\n          ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';\n          ctx.strokeText(text, pos.x, pos.y);\n          ctx.fillStyle = '#ffffff';\n          ctx.fillText(text, pos.x, pos.y);\n        });\n        ctx.restore();\n      }\n    }]\n  });\n\n  const ctx2 = document.getElementById('disburseBarChart').getContext('2d');\n  if (disburseBarInstance) disburseBarInstance.destroy();\n  disburseBarInstance = new Chart(ctx2, {\n    type: 'bar',\n    data: {\n      labels: sdData.map(i => i.label),\n      datasets: [{\n        label: '% เบิกจ่าย',\n        data: sdData.map(i => i.pct),\n        backgroundColor: sdData.map(i => getBudgetColor(i.label, i.color)),\n        borderRadius: 6\n      }]\n    },\n    options: {\n      responsive: true,\n      maintainAspectRatio: false,\n      scales: { y: { beginAtZero: true, max: 100 } },\n      plugins: { legend: { display: false } }\n    }\n  });\n}\n\n// ========================================================\n// 3. ฟังก์ชันกราฟ & สรุปผลการดำเนินงาน (ขั้นตอน)\n// ========================================================\nfunction renderStatusSection(statusSummary) {\n  if (!statusSummary) return;\n\n  const sources = Object.keys(statusSummary).sort((a, b) => getSrcSortOrder(a) - getSrcSortOrder(b));\n  let totalFinished = 0, totalInConstruction = 0, totalInProcurement = 0, totalCancelled = 0;\n\n  sources.forEach(src => {\n    const s = statusSummary[src];\n    totalFinished += (s['แล้วเสร็จ'] || 0);\n    totalInConstruction += (s['อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ'] || 0);\n    totalInProcurement += (s['ระหว่างจัดซื้อ/จัดจ้าง'] || 0);\n    totalCancelled += (s['ยกเลิก'] || 0);\n  });\n\n  // Pie Chart\n  const ctxPie = document.getElementById('statusPieChart').getContext('2d');\n  if (statusPieInstance) statusPieInstance.destroy();\n  statusPieInstance = new Chart(ctxPie, {\n    type: 'pie',\n    data: {\n      labels: ['แล้วเสร็จ', 'อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ', 'ระหว่างจัดซื้อ/จัดจ้าง', 'ยกเลิก'],\n      datasets: [{\n        data: [totalFinished, totalInConstruction, totalInProcurement, totalCancelled],\n        backgroundColor: [STATUS_COLORS['แล้วเสร็จ'], STATUS_COLORS['อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ'], STATUS_COLORS['ระหว่างจัดซื้อ/จัดจ้าง'], STATUS_COLORS['ยกเลิก']]\n      }]\n    },\n    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }\n  });\n\n  // Stacked Bar Chart\n  const ctxBar = document.getElementById('statusBarChart').getContext('2d');\n  if (statusBarInstance) statusBarInstance.destroy();\n  statusBarInstance = new Chart(ctxBar, {\n    type: 'bar',\n    data: {\n      labels: sources,\n      datasets: [\n        { label: 'แล้วเสร็จ', data: sources.map(s => statusSummary[s]['แล้วเสร็จ'] || 0), backgroundColor: STATUS_COLORS['แล้วเสร็จ'] },\n        { label: 'อยู่ระหว่างก่อสร้าง/จัดซื้อ', data: sources.map(s => statusSummary[s]['อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ'] || 0), backgroundColor: STATUS_COLORS['อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ'] },\n        { label: 'ระหว่างจัดซื้อ/จัดจ้าง', data: sources.map(s => statusSummary[s]['ระหว่างจัดซื้อ/จัดจ้าง'] || 0), backgroundColor: STATUS_COLORS['ระหว่างจัดซื้อ/จัดจ้าง'] },\n        { label: 'ยกเลิก', data: sources.map(s => statusSummary[s]['ยกเลิก'] || 0), backgroundColor: STATUS_COLORS['ยกเลิก'] }\n      ]\n    },\n    options: {\n      responsive: true,\n      maintainAspectRatio: false,\n      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },\n      plugins: { legend: { position: 'bottom' } }\n    }\n  });\n\n  // ตารางสรุปขั้นตอน\n  const tbody = document.getElementById('statusTableBody');\n  tbody.innerHTML = '';\n  sources.forEach(src => {\n    const s = statusSummary[src];\n    const total = (s['totalCount'] || 0);\n\n    const row = `\n      <tr>\n        <td class=\"text-start fw-bold\">${src}</td>\n        <td class=\"fw-semibold text-success\">${(s['แล้วเสร็จ'] || 0).toLocaleString()}</td>\n        <td class=\"fw-semibold text-info\">${(s['อยู่ระหว่างดำเนินการก่อสร้าง/จัดซื้อ'] || 0).toLocaleString()}</td>\n        <td class=\"fw-semibold text-warning\">${(s['ระหว่างจัดซื้อ/จัดจ้าง'] || 0).toLocaleString()}</td>\n        <td class=\"fw-semibold text-danger\">${(s['ยกเลิก'] || 0).toLocaleString()}</td>\n        <td class=\"fw-bold bg-light\">${total.toLocaleString()} รายการ</td>\n      </tr>\n    `;\n    tbody.insertAdjacentHTML('beforeend', row);\n  });\n}\n\n// ฟังก์ชันค้นหา\nfunction filterDisbursementData() {\n  const kw = document.getElementById('searchKeyword').value.toLowerCase();\n  const filtered = rawAllProjects.filter(p => p[0].toLowerCase().includes(kw) || p[1].toLowerCase().includes(kw));\n  \n  renderGroupedDisbursement(filtered);\n  \n  const updatedStatusSummary = calculateStatusSummary(filtered);\n  renderStatusSection(updatedStatusSummary);\n}\n\n// 💡 ฟังก์ชัน Auto-Retry ดึงข้อมูลซ้ำอัตโนมัติ 3 รอบ กรณีระบบตอบสนองช้า\nasync function fetchWithRetry(url, retries = 3, delay = 1500) {\n  for (let i = 0; i < retries; i++) {\n    try {\n      const response = await fetch(url, {\n        method: 'GET',\n        redirect: 'follow'\n      });\n      if (response.ok) return await response.json();\n    } catch (err) {\n      if (i === retries - 1) throw err;\n      await new Promise(resolve => setTimeout(resolve, delay));\n    }\n  }\n}\n  \n// ดึงข้อมูลจาก API\nasync function loadData() {\n  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyMaCtK01tGDYP-jrq9cgUU8x071ye09-NN2YqwmQrAKIl2H_5JaoOZ1zI3s-yuo6vK/exec';\n  const loadingOverlay = document.getElementById('loadingOverlay');\n\n  try {\n    // ดึงข้อมูลผ่านระบบ Auto-Retry\n    const data = await fetchWithRetry(WEB_APP_URL);\n\n    if (data) {\n      if (data.SD && Array.isArray(data.SD)) {\n        sdOrderList = data.SD.map(s => s.label);\n        data.SD.forEach(s => { if (s.label && s.color) sdColorMap[s.label] = s.color; });\n      }\n      const fy = detectFiscalYear(data);\n      const fyText = fy ? `ปีงบประมาณ พ.ศ. ${fy} | ` : '';\n      if (data.updated) document.getElementById('updateText').innerText = fyText + 'ข้อมูล ณ วันที่: ' + data.updated;\n      if (data.total !== undefined) document.getElementById('totalCount').innerText = data.total.toLocaleString();\n\n      if (data.SD) renderDisbursementCharts(data.SD);\n      \n      if (data.ALL) {\n        rawAllProjects = data.ALL;\n        renderGroupedDisbursement(rawAllProjects);\n\n        const calculatedSummary = calculateStatusSummary(rawAllProjects);\n        renderStatusSection(calculatedSummary);\n      }\n\n      // ซ่อน Loading Overlay เมื่อประมวลผลเสร็จสิ้น\n      if (loadingOverlay) loadingOverlay.classList.add('hidden');\n    }\n  } catch (err) {\n    console.error('Error:', err);\n    if (loadingOverlay) {\n      loadingOverlay.innerHTML = `\n        <div style=\"color: #d32f2f; font-weight: bold; font-size: 16px; text-align: center; padding: 20px;\">\n          ❌ ไม่สามารถเชื่อมต่อระบบได้ชั่วคราว<br>\n          <small style=\"color: #666; font-weight: normal; margin-top: 8px; display: block;\">กรุณากดรีเฟรชหน้าจอใหม่อีกครั้ง</small>\n        </div>`;\n    }\n  }\n}\n\nwindow.onload = loadData;\n<\/script>\n\n</body>\n</html>";
+    const overviewFrame = document.getElementById("frame-overview");
+    if (overviewFrame) {
+      overviewFrame.removeAttribute("src");
+      overviewFrame.srcdoc = overviewHtmlContent;
+    }
+
+    function switchTab(type, btnElement) {
+      // 1. ซ่อน iframe ทั้งหมด
+      document.querySelectorAll('.dashboard-iframe').forEach(frame => {
+        frame.classList.remove('active');
+      });
+
+      // 2. แสดง iframe ตัวที่เลือก
+      const activeFrame = document.getElementById('frame-' + type);
+      if (activeFrame) {
+        activeFrame.classList.add('active');
+      }
+
+      // 3. ปรับสถานะปุ่มกด
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>
